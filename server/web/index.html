@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<title>Hanashi</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hanashi">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#EEF0F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12151C" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/icon-192.png">
+<link rel="manifest" href="/manifest.json">
+<style>
+:root{
+  --bg:#eef0f3; --surface:#fff; --ink:#1b2333; --muted:#5d6678; --line:#d6dae2;
+  --ai:#2c3e7a; --ai-soft:#e3e8f6; --me:#1b2333; --me-ink:#f3f5f9;
+  --fix:#9a5a00; --fix-soft:#fbf0dc; --ok:#2f7a4f; --ok-soft:#e1f1e7; --rec:#c2352b;
+  --font:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#12151c; --surface:#1b2029; --ink:#e7eaf0; --muted:#9aa3b5; --line:#2c3341;
+  --ai:#a9b8ee; --ai-soft:#232c45; --me:#d9deea; --me-ink:#141821;
+  --fix:#f0b85a; --fix-soft:#33281a; --ok:#79c99a; --ok-soft:#1a3024; --rec:#ef6a5f; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%;overflow:hidden}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app{height:100dvh;display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:minmax(0,1fr);max-width:720px;margin:0 auto;
+  padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+header{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;border-bottom:1px solid var(--line);background:var(--bg)}
+.avatar{width:40px;height:40px;border-radius:50%;background:var(--ai-soft);color:var(--ai);display:grid;place-items:center;font-weight:700;font-size:20px;flex:none}
+.who{flex:1;min-width:0}
+.who b{display:block;font-size:17px}
+.who span{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 12px;font-size:13px;color:var(--muted);white-space:nowrap}
+.chip.on{border-color:var(--ai);background:var(--ai-soft);color:var(--ai)}
+.chip:disabled{opacity:.5}
+.talk{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;min-height:0;-webkit-overflow-scrolling:touch}
+.msg{display:flex;flex-direction:column;gap:6px;max-width:88%;min-width:0}
+.msg.ai{align-self:flex-start}
+.msg.me{align-self:flex-end;align-items:flex-end}
+.bubble{padding:10px 14px;border-radius:16px;font-size:19px;line-height:1.6;word-break:break-word;-webkit-user-select:text;user-select:text}
+.ai .bubble{background:var(--surface);border:1px solid var(--line);border-top-left-radius:4px}
+.me .bubble{background:var(--me);color:var(--me-ink);border-top-right-radius:4px}
+.small{font-size:13px;color:var(--muted);padding:0 4px}
+.en{font-style:italic}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.card{border-radius:12px;padding:9px 12px;font-size:14px;display:flex;flex-direction:column;gap:3px;max-width:100%}
+.card .k{font-size:11px;font-weight:700;letter-spacing:.08em}
+.card.explain{background:var(--ai-soft)} .card.explain .k{color:var(--ai)}
+.card.ok{background:var(--ok-soft);color:var(--ok);font-weight:600}
+.card.ok .alt{font-weight:400;color:var(--muted);font-size:13px}
+.card.fix{background:var(--fix-soft);border:1px solid color-mix(in srgb,var(--fix) 40%,transparent)} .card.fix .k{color:var(--fix)}
+.card .jp{font-size:17px;color:var(--ink)}
+.card .alt{color:var(--muted)}
+.card ul{margin:2px 0 0;padding-left:18px}
+.composer{background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(8px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+.status{font-size:13px;color:var(--rec)}
+.sugs{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.sug{border:1px dashed var(--ai);color:var(--ai);background:transparent;border-radius:12px;padding:6px 12px;text-align:left;flex:none;max-width:260px;font-size:15px}
+.sug small{display:block;color:var(--muted);font-size:11px}
+.row{display:flex;gap:10px;align-items:flex-end}
+textarea{flex:1;min-width:0;resize:none;border:1px solid var(--line);border-radius:14px;padding:10px 14px;background:var(--bg);font-size:17px;line-height:1.45;max-height:120px}
+textarea.live{border-color:var(--rec)}
+.send{height:44px;padding:0 16px;border:1px solid var(--ai);border-radius:12px;background:transparent;color:var(--ai);font-weight:700}
+.send:disabled{opacity:.4}
+.controls{display:flex;align-items:center}
+.controls .side{flex:1;display:flex}
+.controls .side.r{justify-content:flex-end}
+.mic{width:72px;height:72px;border-radius:50%;border:none;background:var(--ai);color:var(--surface);display:grid;place-items:center;position:relative;box-shadow:0 3px 10px rgba(0,0,0,.18);transition:transform .1s}
+.mic:active{transform:scale(.94)}
+.mic svg{width:28px;height:28px}
+.mic.live{background:var(--rec)}
+.mic.live::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--rec);animation:pulse 1.4s ease-out infinite}
+@keyframes pulse{from{opacity:.8;transform:scale(.95)}to{opacity:0;transform:scale(1.25)}}
+@media (prefers-reduced-motion:reduce){.mic.live::after{animation:none}}
+.sheet{position:fixed;inset:0;z-index:10;background:var(--surface);display:flex;flex-direction:column;max-width:720px;margin:0 auto;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.sheet .head{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.sheet h2{flex:1;margin:0;font-size:20px}
+.sheet .body{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:22px}
+.sec{display:flex;flex-direction:column;gap:8px}
+.sec>label,.sec>.lbl{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.field{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);font-size:16px;width:100%}
+.hint{font-size:13px;color:var(--muted)}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;background:var(--bg)}
+.seg button{flex:1;border:1px solid transparent;background:transparent;border-radius:8px;padding:8px 4px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);border-color:var(--ai);color:var(--ai);font-weight:700}
+.toggle{display:flex;align-items:center;gap:12px;padding:6px 0}
+.toggle div{flex:1}
+.toggle b{display:block;font-weight:400;font-size:16px}
+.toggle input{width:22px;height:22px;accent-color:var(--ai)}
+.wide{border:1px solid var(--ai);background:transparent;color:var(--ai);border-radius:12px;padding:14px;font-weight:700;font-size:16px}
+.note{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:4px;background:transparent;text-align:left;width:100%}
+.note .from{color:var(--muted);text-decoration:line-through;font-size:14px}
+.note .to{font-size:17px}
+.note .why{color:var(--muted);font-size:13px}
+.empty{color:var(--muted);font-size:15px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="avatar" aria-hidden="true">ハ</div>
+    <div class="who"><b>Hana</b><span id="sub">Your friend in Tokyo · 吉祥寺</span></div>
+    <button class="chip" id="notesBtn">Notes</button>
+    <button class="chip" id="setBtn">Settings</button>
+  </header>
+
+  <main class="talk" id="talk" aria-live="polite"></main>
+
+  <div class="composer">
+    <div class="status" id="status" role="status" hidden></div>
+    <div class="sugs" id="sugs" hidden></div>
+    <div class="row">
+      <textarea id="input" rows="1" placeholder="話してみて… or type here"></textarea>
+      <button class="send" id="sendBtn" disabled>Send</button>
+    </div>
+    <div class="controls">
+      <div class="side"><button class="chip" id="handsBtn">Hands-free</button></div>
+      <button class="mic" id="micBtn" aria-label="Talk to Hana">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+      <div class="side r"><button class="chip" id="helpBtn">Help me reply</button></div>
+    </div>
+  </div>
+</div>
+
+<section class="sheet" id="settings" hidden aria-label="Settings">
+  <div class="head"><h2>Settings</h2><button class="chip" data-close>Done</button></div>
+  <div class="body">
+    <div class="sec">
+      <label for="token">App token</label>
+      <input class="field" id="token" type="password" autocomplete="off" autocapitalize="off" placeholder="The HANASHI_APP_TOKEN from your server">
+      <div class="hint">This stops other people from using your Claude key. It's saved on this phone only.</div>
+    </div>
+    <div class="sec"><div class="lbl">Your level</div>
+      <div class="seg" data-key="level">
+        <button data-v="beginner">N5–N4</button><button data-v="intermediate">N3</button><button data-v="advanced">N2–N1</button>
+      </div></div>
+    <div class="sec"><div class="lbl">How Hana talks</div>
+      <div class="seg" data-key="style">
+        <button data-v="casual">Casual タメ口</button><button data-v="polite">Polite です・ます</button>
+      </div></div>
+    <div class="sec"><div class="lbl">Speaking speed</div>
+      <div class="seg" data-key="rate">
+        <button data-v="0.85">Slow</button><button data-v="0.95">Relaxed</button><button data-v="1.05">Natural</button>
+      </div></div>
+    <div class="sec"><div class="lbl">Conversation</div>
+      <label class="toggle"><div><b>Hands-free</b><span class="hint">Hana listens again as soon as she finishes talking.</span></div><input type="checkbox" id="optHands"></label>
+      <label class="toggle"><div><b>Read replies aloud</b></div><input type="checkbox" id="optVoice"></label>
+      <label class="toggle"><div><b>Show hiragana readings</b></div><input type="checkbox" id="optReading"></label>
+    </div>
+    <button class="wide" id="newBtn">Start a new conversation</button>
+  </div>
+</section>
+
+<section class="sheet" id="notes" hidden aria-label="Notes">
+  <div class="head"><h2>Notes</h2><button class="chip" id="clearNotes">Clear</button><button class="chip" data-close>Done</button></div>
+  <div class="body" id="noteList"></div>
+</section>
+
+<script>
+(() => {
+"use strict";
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("hanashi:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("hanashi:" + k, JSON.stringify(v)); } catch {} },
+};
+
+/* ---------------- state ---------------- */
+const settings = Object.assign(
+  { token: "", level: "intermediate", style: "casual", rate: 0.95, showReading: true, voiceOn: true, handsFree: true },
+  store.get("settings", {}),
+);
+let msgs = store.get("chat", []);
+let notes = store.get("notes", []);
+let busy = false, listening = false, ctl = null;
+const saveSettings = () => store.set("settings", settings);
+const saveChat = () => store.set("chat", msgs.filter((m) => !m.streaming).slice(-200));
+const saveNotes = () => store.set("notes", notes.slice(0, 500));
+const uid = () => Math.random().toString(36).slice(2);
+
+const GREETINGS = {
+  casual: [
+    ["おー、久しぶり！最近どう？", "おー、ひさしぶり！さいきんどう？", "Oh, long time no see! How've you been?"],
+    ["やっほー！今日なにしてた？", "やっほー！きょうなにしてた？", "Hey! What were you up to today?"],
+    ["ねえねえ、週末なにか予定ある？", "ねえねえ、しゅうまつなにかよていある？", "Hey, got any plans for the weekend?"],
+  ],
+  polite: [
+    ["こんにちは！ハナです。今日はどんな一日でしたか？", "こんにちは！はなです。きょうはどんないちにちでしたか？", "Hi! I'm Hana. How was your day today?"],
+    ["はじめまして、ハナです。日本語はどれくらい勉強していますか？", "はじめまして、はなです。にほんごはどれくらいべんきょうしていますか？", "Nice to meet you, I'm Hana. How long have you been studying Japanese?"],
+  ],
+};
+function greeting() {
+  const list = GREETINGS[settings.style];
+  const [text, reading, en] = list[Math.floor(Math.random() * list.length)];
+  return { id: uid(), role: "assistant", text, reading, en };
+}
+
+/* ---------------- rendering ---------------- */
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const views = new Map();
+
+function renderMsg(m) {
+  let v = views.get(m.id);
+  if (!v) { v = el("div", "msg " + (m.role === "user" ? "me" : "ai")); views.set(m.id, v); $("talk").append(v); }
+  v.textContent = "";
+  v.append(el("div", "bubble", m.text || (m.streaming ? "…" : "")));
+  if (m.role === "assistant") {
+    if (settings.showReading && m.reading) v.append(el("div", "small", m.reading));
+    const en = el("div", "small en", m.en || ""); en.hidden = !m.showEn; v.append(en);
+    if (m.explain) { const c = el("div", "card explain"); c.append(el("div", "k", "EXPLANATION"), el("div", null, m.explain)); v.append(c); }
+    if (!m.streaming && m.text) {
+      const t = el("div", "tools");
+      const play = el("button", "chip", "Play again"); play.onclick = () => playNow(m.text);
+      t.append(play);
+      if (m.en) { const b = el("button", "chip", m.showEn ? "Hide English" : "English"); b.onclick = () => { m.showEn = !m.showEn; renderMsg(m); }; t.append(b); }
+      v.append(t);
+    }
+  } else if (m.check) {
+    v.append(checkCard(m.check, m.text));
+  }
+}
+function checkCard(check, original) {
+  if (check.ok) {
+    const c = el("div", "card ok", "Sounds natural");
+    if (check.natural && check.natural !== original) c.append(el("div", "alt", "A local might also say: " + check.natural));
+    return c;
+  }
+  const fixed = check.corrected || check.natural || "";
+  const c = el("div", "card fix");
+  c.append(el("div", "k", "BETTER"), el("div", "jp", fixed));
+  if (check.natural && check.natural !== check.corrected) c.append(el("div", "alt", "More natural: " + check.natural));
+  if (Array.isArray(check.notes) && check.notes.length) {
+    const ul = el("ul"); for (const n of check.notes.slice(0, 3)) ul.append(el("li", null, String(n))); c.append(ul);
+  }
+  if (fixed) { const t = el("div", "tools"); const b = el("button", "chip", "Hear it"); b.onclick = () => playNow(fixed); t.append(b); c.append(t); }
+  return c;
+}
+function renderAll() { $("talk").textContent = ""; views.clear(); msgs.forEach(renderMsg); scrollDown(); }
+function scrollDown() { const t = $("talk"); requestAnimationFrame(() => { t.scrollTop = t.scrollHeight; }); }
+function status(text) { $("status").textContent = text || ""; $("status").hidden = !text; }
+function syncUI() {
+  $("micBtn").classList.toggle("live", listening);
+  $("micBtn").setAttribute("aria-label", listening ? "Stop and send" : "Talk to Hana");
+  $("input").classList.toggle("live", listening);
+  $("input").readOnly = listening;
+  $("sendBtn").disabled = busy || listening || !$("input").value.trim();
+  $("sub").textContent = listening ? "Listening… tap the mic when you're done" : busy ? "Hana is replying…" : "Your friend in Tokyo · 吉祥寺";
+  $("handsBtn").classList.toggle("on", settings.handsFree);
+  $("handsBtn").textContent = settings.handsFree ? "Hands-free on" : "Hands-free off";
+  $("notesBtn").textContent = notes.length ? `Notes ${notes.length}` : "Notes";
+}
+function autosize() { const i = $("input"); i.style.height = "auto"; i.style.height = Math.min(i.scrollHeight, 120) + "px"; }
+
+/* ---------------- speaking ---------------- */
+const synth = window.speechSynthesis;
+let jaVoice = null, gen = 0, pending = 0, autoListen = false, unlocked = false;
+const keep = []; // iOS drops callbacks for utterances that get garbage-collected
+function pickVoice() {
+  if (!synth) return;
+  const vs = synth.getVoices().filter((v) => /^ja/i.test(v.lang));
+  vs.sort((a, b) => score(b) - score(a));
+  jaVoice = vs[0] || null;
+  function score(v) { return (/premium/i.test(v.name) ? 3 : 0) + (/enhanced|拡張/i.test(v.name) ? 2 : 0) + (v.localService ? 1 : 0); }
+}
+if (synth) { pickVoice(); synth.addEventListener?.("voiceschanged", pickVoice); }
+function unlockSpeech() {
+  // iOS only lets a page speak after speech started inside a tap.
+  if (unlocked || !synth) return;
+  unlocked = true;
+  const u = new SpeechSynthesisUtterance(" "); u.volume = 0; synth.speak(u);
+}
+function say(text) {
+  const t = text.trim();
+  if (!t || !synth || !settings.voiceOn) return;
+  const g = gen;
+  const u = new SpeechSynthesisUtterance(t);
+  u.lang = "ja-JP"; if (jaVoice) u.voice = jaVoice; u.rate = settings.rate;
+  const done = () => {
+    const i = keep.indexOf(u); if (i >= 0) keep.splice(i, 1);
+    if (g !== gen) return;
+    pending = Math.max(0, pending - 1);
+    if (pending === 0 && autoListen) { autoListen = false; startListening(true); }
+  };
+  u.onend = done; u.onerror = done;
+  keep.push(u); pending++;
+  synth.speak(u);
+}
+function hush() { gen++; pending = 0; keep.length = 0; try { synth?.cancel(); } catch {} }
+function playNow(text) { unlockSpeech(); autoListen = false; hush(); const v = settings.voiceOn; settings.voiceOn = true; say(text); settings.voiceOn = v; }
+function takeSentences(text) {
+  let cut = -1;
+  for (let i = 0; i < text.length; i++) if ("。！？!?…\n".includes(text[i])) cut = i;
+  return cut < 0 ? ["", text] : [text.slice(0, cut + 1), text.slice(cut + 1)];
+}
+
+/* ---------------- listening ---------------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, heard = "", sendOnEnd = true, silenceTimer = 0, autoBlocked = false;
+function startListening(auto = false) {
+  if (!SR) { status("Voice input isn't available in this browser. Open Hanashi in Safari, or type instead."); return; }
+  if (auto && autoBlocked) { status("Tap the mic to answer."); return; }
+  ctl?.abort();
+  hush();
+  status("");
+  hideSugs();
+  heard = ""; sendOnEnd = true;
+  $("input").value = ""; autosize();
+  try {
+    rec = new SR();
+    rec.lang = "ja-JP";
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.onstart = () => { listening = true; syncUI(); };
+    rec.onresult = (e) => {
+      let t = "";
+      for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+      heard = t; $("input").value = t; autosize();
+      // Some phones keep listening after you stop; end the turn after a short pause.
+      clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(() => { try { rec?.stop(); } catch {} }, 1600);
+    };
+    rec.onerror = (e) => {
+      sendOnEnd = false;
+      if (e.error === "no-speech") status("I didn't catch that. Tap the mic and try again.");
+      else if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        if (auto) { autoBlocked = true; status("Your phone wants a tap before each turn. Tap the mic to answer."); }
+        else status("Allow the microphone for this site (Settings → Safari → Microphone), or type instead.");
+      } else if (e.error !== "aborted") status("The microphone stopped (" + e.error + "). Tap it to try again.");
+    };
+    rec.onend = () => {
+      clearTimeout(silenceTimer);
+      listening = false; rec = null; syncUI();
+      const text = heard.trim(); heard = "";
+      if (sendOnEnd && text) send(text);
+    };
+    rec.start();
+  } catch {
+    if (auto) { autoBlocked = true; status("Tap the mic to answer."); }
+    else status("The microphone didn't start. Tap it again.");
+  }
+}
+function stopListening(send) { sendOnEnd = send; clearTimeout(silenceTimer); try { rec?.stop(); } catch {} }
+
+/* ---------------- talking to Hana ---------------- */
+const history = () => msgs.filter((m) => m.text && m.text.trim() && !m.streaming).map((m) => ({ role: m.role, content: m.text }));
+function authHeaders() { return { "Content-Type": "application/json", ...(settings.token ? { Authorization: "Bearer " + settings.token } : {}) }; }
+
+async function send(raw) {
+  const text = (raw ?? $("input").value).trim();
+  if (!text || busy) return;
+  unlockSpeech();
+  ctl?.abort(); hush(); hideSugs(); status("");
+  $("input").value = ""; autosize();
+
+  const turns = [...history(), { role: "user", content: text }];
+  const me = { id: uid(), role: "user", text };
+  const her = { id: uid(), role: "assistant", text: "", streaming: true };
+  msgs.push(me, her); renderMsg(me); renderMsg(her); scrollDown();
+  busy = true; syncUI();
+
+  const c = new AbortController(); ctl = c;
+  let reply = "", toSpeak = "";
+  try {
+    const res = await fetch("/chat", {
+      method: "POST", headers: authHeaders(), signal: c.signal,
+      body: JSON.stringify({ messages: turns, level: settings.level, style: settings.style }),
+    });
+    if (res.status === 401) throw new Error("The app token is wrong or missing. Enter it in Settings.");
+    if (!res.ok || !res.body) throw new Error("The server answered with an error (" + res.status + "). Try again.");
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "", meta = null;
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let sep;
+      while ((sep = buf.indexOf("\n\n")) >= 0) {
+        const line = buf.slice(0, sep).split("\n").find((l) => l.startsWith("data: "));
+        buf = buf.slice(sep + 2);
+        if (!line) continue;
+        const ev = JSON.parse(line.slice(6));
+        if (ev.type === "text") {
+          reply += ev.delta;
+          her.text = reply.trimStart(); renderMsg(her); scrollDown();
+          const [ready, rest] = takeSentences(toSpeak + ev.delta);
+          if (ready) say(ready);
+          toSpeak = rest;
+        } else if (ev.type === "meta") meta = ev;
+        else if (ev.type === "error") throw new Error(ev.message);
+      }
+    }
+    if (!meta) throw new Error("The reply was cut off. Try again.");
+    if (toSpeak.trim()) say(toSpeak);
+    Object.assign(her, { text: meta.reply || reply.trim(), reading: meta.reading, en: meta.en, explain: meta.explain, streaming: false });
+    renderMsg(her);
+    if (meta.check) {
+      me.check = meta.check; renderMsg(me);
+      const to = meta.check.corrected || meta.check.natural;
+      if (!meta.check.ok && to) { notes.unshift({ from: text, to, why: (meta.check.notes || []).join(" "), at: Date.now() }); saveNotes(); }
+    }
+    scrollDown();
+    if (settings.handsFree) {
+      if (settings.voiceOn && pending > 0) autoListen = true;
+      else startListening(true);
+    }
+  } catch (e) {
+    if (c.signal.aborted) {
+      her.streaming = false;
+      if (!reply.trim()) dropMsg(her); else renderMsg(her);
+    } else {
+      dropMsg(her);
+      status(e instanceof Error && e.message && !/fetch|network|load failed/i.test(e.message)
+        ? e.message : "Couldn't reach the server. Check your connection and try again.");
+    }
+  } finally {
+    if (ctl === c) ctl = null;
+    busy = false; syncUI(); saveChat();
+  }
+}
+function dropMsg(m) { msgs = msgs.filter((x) => x !== m); views.get(m.id)?.remove(); views.delete(m.id); }
+
+/* ---------------- suggestions ---------------- */
+function hideSugs() { $("sugs").hidden = true; $("sugs").textContent = ""; }
+async function helpMe() {
+  const b = $("helpBtn"); if (b.disabled) return;
+  b.disabled = true; b.textContent = "Thinking…";
+  try {
+    const res = await fetch("/suggest", { method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ messages: history(), level: settings.level, style: settings.style }) });
+    if (res.status === 401) throw new Error("The app token is wrong or missing. Enter it in Settings.");
+    if (!res.ok) throw new Error("Couldn't get suggestions. Try again.");
+    const list = await res.json();
+    const box = $("sugs"); box.textContent = "";
+    for (const s of list) {
+      const btn = el("button", "sug", s.jp); btn.append(el("small", null, s.en || ""));
+      btn.onclick = () => { $("input").value = s.jp; autosize(); hideSugs(); syncUI(); };
+      box.append(btn);
+    }
+    box.hidden = !list.length;
+  } catch (e) { status(e.message || "Couldn't get suggestions."); }
+  finally { b.disabled = false; b.textContent = "Help me reply"; }
+}
+
+/* ---------------- sheets ---------------- */
+function openSheet(id) { $(id).hidden = false; if (id === "notes") drawNotes(); if (id === "settings") drawSettings(); }
+document.querySelectorAll("[data-close]").forEach((b) => b.onclick = () => { b.closest(".sheet").hidden = true; });
+function drawSettings() {
+  $("token").value = settings.token;
+  document.querySelectorAll(".seg").forEach((seg) => {
+    const key = seg.dataset.key;
+    seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v) === String(settings[key])));
+  });
+  $("optHands").checked = settings.handsFree; $("optVoice").checked = settings.voiceOn; $("optReading").checked = settings.showReading;
+}
+document.querySelectorAll(".seg").forEach((seg) => seg.addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  const key = seg.dataset.key;
+  settings[key] = key === "rate" ? Number(b.dataset.v) : b.dataset.v;
+  saveSettings(); drawSettings();
+}));
+$("token").addEventListener("input", () => { settings.token = $("token").value.trim(); saveSettings(); });
+$("optHands").onchange = () => { settings.handsFree = $("optHands").checked; autoBlocked = false; saveSettings(); syncUI(); };
+$("optVoice").onchange = () => { settings.voiceOn = $("optVoice").checked; if (!settings.voiceOn) hush(); saveSettings(); };
+$("optReading").onchange = () => { settings.showReading = $("optReading").checked; saveSettings(); renderAll(); };
+$("newBtn").onclick = () => {
+  ctl?.abort(); hush(); if (listening) stopListening(false);
+  msgs = [greeting()]; renderAll(); saveChat(); status(""); hideSugs();
+  $("settings").hidden = true;
+  unlockSpeech(); say(msgs[0].text);
+};
+function drawNotes() {
+  const list = $("noteList"); list.textContent = "";
+  $("clearNotes").hidden = !notes.length;
+  if (!notes.length) { list.append(el("div", "empty", "When Hana spots a mistake, the better way to say it is saved here so you can review it later.")); return; }
+  for (const n of notes) {
+    const b = el("button", "note");
+    b.append(el("div", "from", n.from), el("div", "to", n.to));
+    if (n.why) b.append(el("div", "why", n.why));
+    b.onclick = () => playNow(n.to);
+    list.append(b);
+  }
+}
+let clearArmed = false;
+$("clearNotes").onclick = () => {
+  if (!clearArmed) { clearArmed = true; $("clearNotes").textContent = "Tap again to clear"; setTimeout(() => { clearArmed = false; $("clearNotes").textContent = "Clear"; }, 3000); return; }
+  notes = []; saveNotes(); drawNotes(); syncUI(); clearArmed = false; $("clearNotes").textContent = "Clear";
+};
+
+/* ---------------- wiring ---------------- */
+$("micBtn").onclick = () => {
+  unlockSpeech();
+  autoBlocked = false;
+  if (listening) stopListening(true); else startListening(false);
+};
+$("sendBtn").onclick = () => send();
+$("helpBtn").onclick = helpMe;
+$("handsBtn").onclick = () => { settings.handsFree = !settings.handsFree; autoBlocked = false; saveSettings(); syncUI(); };
+$("notesBtn").onclick = () => openSheet("notes");
+$("setBtn").onclick = () => openSheet("settings");
+$("input").addEventListener("input", () => { autosize(); syncUI(); });
+$("input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
+
+if (!msgs.length) { msgs = [greeting()]; saveChat(); }
+msgs.forEach((m) => { m.streaming = false; });
+renderAll(); syncUI();
+if (!settings.token) openSheet("settings");
+})();
+</script>
+</body>
+</html>
