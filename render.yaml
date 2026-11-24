@@ -1,0 +1,14 @@
+# Render Blueprint: New → Blueprint → pick this repository.
+services:
+  - type: web
+    name: hanashi
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: HANASHI_APP_TOKEN
+        sync: false
